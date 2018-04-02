@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"sync"
 
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/model"
 	"github.com/mongodb/mongo-go-driver/mongo/private/ops"
@@ -119,6 +120,9 @@ func (c *Cluster) Model() *model.Cluster {
 func (c *Cluster) SelectServer(ctx context.Context, selector ServerSelector,
 	readPreference *readpref.ReadPref) (*ops.SelectedServer, error) {
 
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	for {
 		suitable, err := SelectServers(ctx, c.monitor, selector)
 		if err != nil {
@@ -161,6 +165,9 @@ func SelectServers(ctx context.Context, m *Monitor, selector ServerSelector) ([]
 func selectServers(ctx context.Context, m monitor, selector ServerSelector) ([]*model.Server, error) {
 	updates, unsubscribe, _ := m.Subscribe()
 	defer unsubscribe()
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	var current *model.Cluster
 	for {

@@ -10,12 +10,39 @@
 package documentation_examples_test
 
 import (
+	"log"
+	"os"
 	"testing"
 
 	"github.com/mongodb/mongo-go-driver/examples/documentation_examples"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/stretchr/testify/require"
+
+	xray "github.com/census-instrumentation/opencensus-go-exporter-aws"
+	"go.opencensus.io/exporter/stackdriver"
+	"go.opencensus.io/trace"
 )
+
+func TestMain(m *testing.M) {
+	se, err := stackdriver.NewExporter(stackdriver.Options{
+		ProjectID: os.Getenv("MONGODB_OPENCENSUS_PROJECTID"),
+	})
+	if err != nil {
+		log.Fatalf("Failed to create Stackdriver exporter: %v", err)
+	}
+	defer se.Flush()
+
+	xe, err := xray.NewExporter(xray.WithVersion("latest"))
+	if err != nil {
+		log.Fatalf("Failed to create XRay exporter: %v", err)
+	}
+	defer xe.Flush()
+
+	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
+	trace.RegisterExporter(se)
+	trace.RegisterExporter(xe)
+	os.Exit(m.Run())
+}
 
 func TestDocumentationExamples(t *testing.T) {
 	client, err := mongo.NewClient("mongodb://localhost:27017")

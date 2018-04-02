@@ -13,6 +13,7 @@ import (
 	"fmt"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
 	"github.com/mongodb/mongo-go-driver/mongo/private/msg"
@@ -143,6 +144,9 @@ func (c *cursorImpl) ID() int64 {
 }
 
 func (c *cursorImpl) Next(ctx context.Context) bool {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	// TODO(skriptble): This is really messy, needs to be redesigned.
 	c.current++
 	if c.current < c.currentBatch.Len() {
@@ -186,6 +190,9 @@ func (c *cursorImpl) Err() error {
 
 // TODO(GODRIVER-256): Only return the underlying Close error.
 func (c *cursorImpl) Close(ctx context.Context) error {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	if c.cursorID == 0 {
 		return c.err
 	}
@@ -233,6 +240,9 @@ func (c *cursorImpl) Close(ctx context.Context) error {
 }
 
 func (c *cursorImpl) getMore(ctx context.Context) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	c.currentBatch.Reset()
 	c.current = 0
 

@@ -10,11 +10,15 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // RunCommand runs a command on the database.
 func RunCommand(ctx context.Context, s *SelectedServer, db string, command interface{},
 ) (bson.Reader, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	return runMustUsePrimary(ctx, s, db, command)
 }

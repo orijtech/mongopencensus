@@ -9,6 +9,7 @@ package conn
 import (
 	"context"
 
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/model"
 	"github.com/mongodb/mongo-go-driver/mongo/private/msg"
 )
@@ -60,10 +61,16 @@ func (tc *TrackedConnection) Inc() {
 
 // Read reads a message from the connection.
 func (tc *TrackedConnection) Read(ctx context.Context, responseTo int32) (msg.Response, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	return tc.c.Read(ctx, responseTo)
 }
 
 // Write writes a number of messages to the connection.
 func (tc *TrackedConnection) Write(ctx context.Context, reqs ...msg.Request) error {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	return tc.c.Write(ctx, reqs...)
 }

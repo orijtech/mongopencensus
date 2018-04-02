@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/model"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
 )
@@ -45,12 +46,18 @@ func RegisterAuthenticatorFactory(name string, factory AuthenticatorFactory) {
 // Opener returns a connection opener that will open and authenticate the connection.
 func Opener(opener conn.Opener, authenticator Authenticator) conn.Opener {
 	return func(ctx context.Context, addr model.Addr, opts ...conn.Option) (conn.Connection, error) {
+		ctx, span := trace.SpanWithName(ctx, "Opener")
+		defer span.End()
+
 		return NewConnection(ctx, authenticator, opener, addr, opts...)
 	}
 }
 
 // NewConnection opens a connection and authenticates it.
 func NewConnection(ctx context.Context, authenticator Authenticator, opener conn.Opener, addr model.Addr, opts ...conn.Option) (conn.Connection, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	conn, err := opener(ctx, addr, opts...)
 	if err != nil {
 		if conn != nil {

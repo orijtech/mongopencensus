@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/model"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
 	"github.com/mongodb/mongo-go-driver/mongo/private/msg"
@@ -17,10 +18,15 @@ import (
 
 // Run executes an arbitrary command against the given database.
 func Run(ctx context.Context, s *SelectedServer, db string, command interface{}) (bson.Reader, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	return runMayUseSecondary(ctx, s, db, command)
 }
 
 func runMustUsePrimary(ctx context.Context, s *SelectedServer, db string, command interface{}) (bson.Reader, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	request := msg.NewCommand(
 		msg.NextRequestID(),
@@ -39,6 +45,9 @@ func runMustUsePrimary(ctx context.Context, s *SelectedServer, db string, comman
 }
 
 func runMayUseSecondary(ctx context.Context, s *SelectedServer, db string, command interface{}) (bson.Reader, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	request := msg.NewCommand(
 		msg.NextRequestID(),
 		db,

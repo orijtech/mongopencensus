@@ -10,11 +10,15 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // CreateIndexes creates one or more index in a collection.
 func CreateIndexes(ctx context.Context, s *SelectedServer, ns Namespace,
 	indexes *bson.Array) error {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	listIndexesCommand := bson.NewDocument(
 		bson.EC.String("createIndexes", ns.Collection),

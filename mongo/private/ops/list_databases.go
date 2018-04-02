@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // ListDatabasesOptions are the options for listing databases.
@@ -27,6 +28,9 @@ type ListDatabasesOptions struct {
 // ListDatabases lists the databases with the given options
 func ListDatabases(ctx context.Context, s *SelectedServer, filter *bson.Document,
 	options ListDatabasesOptions) (Cursor, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	listDatabasesCommand := bson.NewDocument(
 		bson.EC.Int32("listDatabases", 1))

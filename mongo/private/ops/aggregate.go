@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/private/options"
 )
@@ -21,6 +22,9 @@ import (
 // the appropriate parameter based on whether there is a $out in the pipeline.
 func Aggregate(ctx context.Context, s *SelectedServer, ns Namespace, pipeline *bson.Array,
 	hasDollarOut bool, opts ...options.AggregateOptioner) (Cursor, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	if err := ns.validate(); err != nil {
 		return nil, err
@@ -72,6 +76,10 @@ type AggregationOptions struct {
 //
 // The pipeline must encode as a BSON array of pipeline stages.
 func LegacyAggregate(ctx context.Context, s *SelectedServer, ns Namespace, pipeline *bson.Array, options AggregationOptions) (Cursor, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	if err := ns.validate(); err != nil {
 		return nil, err
 	}

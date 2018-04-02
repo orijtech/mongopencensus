@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/private/options"
 )
@@ -17,6 +18,9 @@ import (
 // Find executes a query.
 func Find(ctx context.Context, s *SelectedServer, ns Namespace, filter *bson.Document,
 	findOptions ...options.FindOptioner) (Cursor, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	if err := ns.validate(); err != nil {
 		return nil, err

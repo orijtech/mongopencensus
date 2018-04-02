@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // ListCollectionsOptions are the options for listing collections.
@@ -25,6 +26,10 @@ type ListCollectionsOptions struct {
 
 // ListCollections lists the collections in the given database with the given options.
 func ListCollections(ctx context.Context, s *SelectedServer, db string, options ListCollectionsOptions) (Cursor, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	if err := validateDB(db); err != nil {
 		return nil, err
 	}

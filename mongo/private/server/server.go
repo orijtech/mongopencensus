@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"sync"
 
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/model"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
@@ -116,9 +117,14 @@ func (s *Server) Close() error {
 
 // Connection gets a connection to the server.
 func (s *Server) Connection(ctx context.Context) (conn.Connection, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
+	_, lockSpan := trace.SpanWithName(ctx, "Server.Lock() for connProvider")
 	s.lock.Lock()
 	p := s.connProvider
 	s.lock.Unlock()
+	lockSpan.End()
 
 	if p == nil {
 		return nil, ErrServerClosed

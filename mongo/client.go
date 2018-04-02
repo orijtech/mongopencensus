@@ -10,6 +10,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/connstring"
 	"github.com/mongodb/mongo-go-driver/mongo/private/cluster"
 	"github.com/mongodb/mongo-go-driver/mongo/private/ops"
@@ -143,6 +144,9 @@ func (client *Client) ConnectionString() string {
 func (client *Client) selectServer(ctx context.Context, selector cluster.ServerSelector,
 	readPref *readpref.ReadPref) (*ops.SelectedServer, error) {
 
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	s, err := client.cluster.SelectServer(ctx, selector, readPref)
 	if err != nil {
 		return nil, err
@@ -153,6 +157,9 @@ func (client *Client) selectServer(ctx context.Context, selector cluster.ServerS
 
 func (client *Client) listDatabasesHelper(ctx context.Context, filter interface{},
 	nameOnly bool) (Cursor, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	// The spec indicates that we should not run the listDatabase command on a secondary in a
 	// replica set.
@@ -175,11 +182,17 @@ func (client *Client) listDatabasesHelper(ctx context.Context, filter interface{
 
 // ListDatabases returns a Cursor iterating over descriptions of each of the databases on the server.
 func (client *Client) ListDatabases(ctx context.Context, filter interface{}) (Cursor, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	return client.listDatabasesHelper(ctx, filter, false)
 }
 
 // ListDatabaseNames returns a slice containing the names of all of the databases on the server.
 func (client *Client) ListDatabaseNames(ctx context.Context, filter interface{}) ([]string, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	c, err := client.listDatabasesHelper(ctx, filter, true)
 	if err != nil {
 		return nil, err
@@ -188,7 +201,10 @@ func (client *Client) ListDatabaseNames(ctx context.Context, filter interface{})
 	names := make([]string, 0)
 	for c.Next(ctx) {
 		var db struct{ Name string }
-		if err := c.Decode(&db); err != nil {
+		_, decodeSpan := trace.SpanWithName(ctx, "decodeDB")
+		err := c.Decode(&db)
+		decodeSpan.End()
+		if err != nil {
 			return nil, err
 		}
 

@@ -22,6 +22,7 @@ import (
 
 	"encoding/base64"
 
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
 )
 
@@ -51,6 +52,9 @@ type ScramSHA1Authenticator struct {
 
 // Auth authenticates the connection.
 func (a *ScramSHA1Authenticator) Auth(ctx context.Context, c conn.Connection) error {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	client := &scramSaslClient{
 		username:       a.Username,
 		password:       a.Password,

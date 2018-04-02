@@ -15,6 +15,7 @@ import (
 	"io"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/model"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
 	"github.com/mongodb/mongo-go-driver/mongo/private/msg"
@@ -40,6 +41,9 @@ type MongoDBCRAuthenticator struct {
 
 // Auth authenticates the connection.
 func (a *MongoDBCRAuthenticator) Auth(ctx context.Context, c conn.Connection) error {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	// Arbiters cannot be authenticated
 	if c.Model().Kind == model.RSArbiter {

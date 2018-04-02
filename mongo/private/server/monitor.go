@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/model"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
@@ -29,6 +30,7 @@ func StartMonitor(addr model.Addr, opts ...Option) (*Monitor, error) {
 		return nil, err
 	}
 
+	spanName := trace.RelativeName()
 	done := make(chan struct{}, 1)
 	checkNow := make(chan struct{}, 1)
 	m := &Monitor{
@@ -42,16 +44,24 @@ func StartMonitor(addr model.Addr, opts ...Option) (*Monitor, error) {
 		checkNow:    checkNow,
 	}
 
-	var updateServer = func(heartbeatTimer, rateLimitTimer *time.Timer) {
+	var updateServer = func(ctx context.Context, heartbeatTimer, rateLimitTimer *time.Timer) {
+		ctx, span := trace.SpanWithName(ctx, spanName+"/updateServer")
+		defer span.End()
+
+		_, span1 := trace.SpanWithName(ctx, "updateServer.rateLimitTimer.Wait()")
 		// wait if last heartbeat was less than
 		// minHeartbeatFreqMS ago
 		<-rateLimitTimer.C
+		span1.End()
 
 		// get an updated server description
-		model := m.heartbeat()
+		model := m.heartbeat(ctx)
 		m.currentLock.Lock()
 		m.current = model
 		m.currentLock.Unlock()
+
+		_, span2 := trace.SpanWithName(ctx, "(heartbeatTimer+rateLimitTimer).Stop()")
+		defer span2.End()
 
 		// send the update to all subscribers
 		m.subscriberLock.Lock()
@@ -76,13 +86,16 @@ func StartMonitor(addr model.Addr, opts ...Option) (*Monitor, error) {
 	go func() {
 		heartbeatTimer := time.NewTimer(0)
 		rateLimitTimer := time.NewTimer(0)
+		ctx, span := trace.SpanWithName(context.Background(), "heartbeat")
+		defer span.End()
+
 		for {
 			select {
 			case <-heartbeatTimer.C:
-				updateServer(heartbeatTimer, rateLimitTimer)
+				updateServer(ctx, heartbeatTimer, rateLimitTimer)
 
 			case <-checkNow:
-				updateServer(heartbeatTimer, rateLimitTimer)
+				updateServer(ctx, heartbeatTimer, rateLimitTimer)
 
 			case <-done:
 				heartbeatTimer.Stop()
@@ -177,6 +190,9 @@ func (m *Monitor) RequestImmediateCheck() {
 }
 
 func (m *Monitor) describeServer(ctx context.Context) (*internal.IsMasterResult, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	isMasterReq := msg.NewCommand(
 		msg.NextRequestID(),
 		"admin",
@@ -198,12 +214,13 @@ func (m *Monitor) describeServer(ctx context.Context) (*internal.IsMasterResult,
 	return &isMasterResult, nil
 }
 
-func (m *Monitor) heartbeat() *model.Server {
+func (m *Monitor) heartbeat(ctx context.Context) *model.Server {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	const maxRetryCount = 2
 	var savedErr error
 	var s *model.Server
-	ctx := context.Background()
 	for i := 1; i <= maxRetryCount; i++ {
 		if m.conn != nil && m.conn.Expired() {
 			m.conn.CloseIgnoreError()
@@ -228,8 +245,11 @@ func (m *Monitor) heartbeat() *model.Server {
 			m.conn = conn
 		}
 
+		cctx, hSpan := trace.SpanWithName(ctx, "try-heartbeat")
 		now := time.Now()
-		isMasterResult, err := m.describeServer(ctx)
+		isMasterResult, err := m.describeServer(cctx)
+		hSpan.End()
+
 		if err != nil {
 			savedErr = err
 			m.conn.CloseIgnoreError()

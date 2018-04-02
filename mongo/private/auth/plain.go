@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
 )
 
@@ -35,6 +36,9 @@ type PlainAuthenticator struct {
 
 // Auth authenticates the connection.
 func (a *PlainAuthenticator) Auth(ctx context.Context, c conn.Connection) error {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	return ConductSaslConversation(ctx, c, "$external", &plainSaslClient{
 		username: a.Username,
 		password: a.Password,

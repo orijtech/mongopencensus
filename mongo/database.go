@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/private/cluster"
 	"github.com/mongodb/mongo-go-driver/mongo/private/ops"
 	"github.com/mongodb/mongo-go-driver/mongo/readconcern"
@@ -71,6 +72,9 @@ func (db *Database) RunCommand(ctx context.Context, command interface{}) (bson.R
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	s, err := db.client.selectServer(ctx, readpref.Selector(readpref.Primary()), readpref.Primary())
 	if err != nil {

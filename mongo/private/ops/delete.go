@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/private/options"
 )
@@ -17,6 +18,9 @@ import (
 // Delete executes an delete command with a given set of delete documents and options.
 func Delete(ctx context.Context, s *SelectedServer, ns Namespace, deleteDocs []*bson.Document,
 	opts ...options.DeleteOptioner) (bson.Reader, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	if err := ns.validate(); err != nil {
 		return nil, err

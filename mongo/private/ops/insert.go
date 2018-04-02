@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/private/options"
 )
@@ -17,6 +18,9 @@ import (
 // Insert executes an insert command for the given set of  documents.
 func Insert(ctx context.Context, s *SelectedServer, ns Namespace, docs []*bson.Document,
 	options ...options.InsertOptioner) (rdr bson.Reader, err error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	if err := ns.validate(); err != nil {
 		return nil, err

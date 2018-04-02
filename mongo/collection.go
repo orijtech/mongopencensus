@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/private/cluster"
 	"github.com/mongodb/mongo-go-driver/mongo/private/ops"
 	"github.com/mongodb/mongo-go-driver/mongo/private/options"
@@ -62,10 +63,16 @@ func (coll *Collection) namespace() ops.Namespace {
 }
 
 func (coll *Collection) getWriteableServer(ctx context.Context) (*ops.SelectedServer, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	return coll.client.selectServer(ctx, coll.writeSelector, readpref.Primary())
 }
 
 func (coll *Collection) getReadableServer(ctx context.Context) (*ops.SelectedServer, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	return coll.client.selectServer(ctx, coll.readSelector, coll.readPreference)
 }
 
@@ -84,6 +91,9 @@ func (coll *Collection) InsertOne(ctx context.Context, document interface{},
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	doc, err := TransformDocument(document)
 	if err != nil {
@@ -163,6 +173,9 @@ func (coll *Collection) InsertMany(ctx context.Context, documents []interface{},
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	result := make([]interface{}, len(documents))
 	docs := make([]*bson.Document, len(documents))
@@ -246,6 +259,9 @@ func (coll *Collection) DeleteOne(ctx context.Context, filter interface{},
 		ctx = context.Background()
 	}
 
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	f, err := TransformDocument(filter)
 	if err != nil {
 		return nil, err
@@ -300,7 +316,9 @@ func (coll *Collection) DeleteOne(ctx context.Context, filter interface{},
 		return nil, err
 	}
 
+	_, decodeSpan := trace.SpanWithName(ctx, "bson.NewDecoder.Decode")
 	err = bson.NewDecoder(bytes.NewReader(rdr)).Decode(&result)
+	decodeSpan.End()
 	if err != nil {
 		return nil, err
 	}
@@ -321,6 +339,9 @@ func (coll *Collection) DeleteMany(ctx context.Context, filter interface{},
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	f, err := TransformDocument(filter)
 	if err != nil {
@@ -386,6 +407,9 @@ func (coll *Collection) updateOrReplaceOne(ctx context.Context, filter,
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	updateDocs := []*bson.Document{
 		bson.NewDocument(
@@ -464,6 +488,9 @@ func (coll *Collection) UpdateOne(ctx context.Context, filter interface{}, updat
 		ctx = context.Background()
 	}
 
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	f, err := TransformDocument(filter)
 	if err != nil {
 		return nil, err
@@ -493,6 +520,9 @@ func (coll *Collection) UpdateMany(ctx context.Context, filter interface{}, upda
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	f, err := TransformDocument(filter)
 	if err != nil {
@@ -585,6 +615,9 @@ func (coll *Collection) ReplaceOne(ctx context.Context, filter interface{},
 		ctx = context.Background()
 	}
 
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	f, err := TransformDocument(filter)
 	if err != nil {
 		return nil, err
@@ -621,6 +654,9 @@ func (coll *Collection) Aggregate(ctx context.Context, pipeline interface{},
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	pipelineArr, err := transformAggregatePipeline(pipeline)
 	if err != nil {
@@ -701,6 +737,10 @@ func (coll *Collection) Aggregate(ctx context.Context, pipeline interface{},
 
 func (coll *Collection) aggregateWithServer(ctx context.Context, server *ops.SelectedServer,
 	pipeline *bson.Array, opts ...options.AggregateOptioner) (Cursor, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	if coll.readConcern != nil {
 		rc, err := Opt.ReadConcern(coll.readConcern)
 		if err != nil {
@@ -725,6 +765,9 @@ func (coll *Collection) Count(ctx context.Context, filter interface{},
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	f, err := TransformDocument(filter)
 	if err != nil {
@@ -766,6 +809,9 @@ func (coll *Collection) Distinct(ctx context.Context, fieldName string, filter i
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	var f *bson.Document
 	var err error
@@ -820,6 +866,9 @@ func (coll *Collection) Find(ctx context.Context, filter interface{},
 		ctx = context.Background()
 	}
 
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	var f *bson.Document
 	var err error
 	if filter != nil {
@@ -872,6 +921,9 @@ func (coll *Collection) FindOne(ctx context.Context, filter interface{},
 		ctx = context.Background()
 	}
 
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	var f *bson.Document
 	var err error
 	if filter != nil {
@@ -913,6 +965,9 @@ func (coll *Collection) FindOneAndDelete(ctx context.Context, filter interface{}
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	var f *bson.Document
 	var err error
@@ -982,6 +1037,9 @@ func (coll *Collection) FindOneAndReplace(ctx context.Context, filter interface{
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	f, err := TransformDocument(filter)
 	if err != nil {
@@ -1058,6 +1116,9 @@ func (coll *Collection) FindOneAndUpdate(ctx context.Context, filter interface{}
 		ctx = context.Background()
 	}
 
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	f, err := TransformDocument(filter)
 	if err != nil {
 		return &DocumentResult{err: err}
@@ -1122,6 +1183,9 @@ func (coll *Collection) FindOneAndUpdate(ctx context.Context, filter interface{}
 // supports resumability in the case of some errors.
 func (coll *Collection) Watch(ctx context.Context, pipeline interface{},
 	opts ...options.ChangeStreamOptioner) (Cursor, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	return newChangeStream(ctx, coll, pipeline, opts...)
 }
 

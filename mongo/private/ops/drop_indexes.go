@@ -10,11 +10,15 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // DropIndexes drops one or all of the indexes in a collection.
 func DropIndexes(ctx context.Context, s *SelectedServer, ns Namespace,
 	index string) (bson.Reader, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	listIndexesCommand := bson.NewDocument(
 		bson.EC.String("dropIndexes", ns.Collection),

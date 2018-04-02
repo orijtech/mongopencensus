@@ -9,12 +9,17 @@ package conn
 import (
 	"context"
 	"net"
+
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // Dialer dials a server according to the network and address.
 type Dialer func(ctx context.Context, dialer *net.Dialer, network, address string) (net.Conn, error)
 
 func dialWithoutTLS(ctx context.Context, dialer *net.Dialer, network, address string) (net.Conn, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	conn, err := dialer.DialContext(ctx, network, address)
 	if err != nil {
 		return nil, err

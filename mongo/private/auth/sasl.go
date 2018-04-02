@@ -13,6 +13,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo/model"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
 	"github.com/mongodb/mongo-go-driver/mongo/private/msg"
 )
@@ -32,6 +33,9 @@ type SaslClientCloser interface {
 
 // ConductSaslConversation handles running a sasl conversation with MongoDB.
 func ConductSaslConversation(ctx context.Context, c conn.Connection, db string, client SaslClient) error {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	// Arbiters cannot be authenticated
 	if c.Model().Kind == model.RSArbiter {

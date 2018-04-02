@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
 )
 
@@ -21,6 +22,9 @@ type ListIndexesOptions struct {
 
 // ListIndexes lists the indexes on the given namespace.
 func ListIndexes(ctx context.Context, s *SelectedServer, ns Namespace, options ListIndexesOptions) (Cursor, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	listIndexesCommand := bson.NewDocument(bson.EC.String("listIndexes", ns.Collection))
 

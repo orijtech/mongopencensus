@@ -11,6 +11,7 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/private/options"
 )
@@ -18,6 +19,9 @@ import (
 // Distinct returns the distinct values for a specified field across a single collection.
 func Distinct(ctx context.Context, s *SelectedServer, ns Namespace, field string,
 	query *bson.Document, opts ...options.DistinctOptioner) ([]interface{}, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	if err := ns.validate(); err != nil {
 		return nil, err

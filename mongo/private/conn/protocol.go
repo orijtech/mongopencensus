@@ -11,12 +11,16 @@ import (
 	"fmt"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/private/msg"
 )
 
 // ExecuteCommand executes the message on the channel.
 func ExecuteCommand(ctx context.Context, c Connection, request msg.Request) (bson.Reader, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	readers, err := ExecuteCommands(ctx, c, []msg.Request{request})
 	if err != nil {
 		return nil, err

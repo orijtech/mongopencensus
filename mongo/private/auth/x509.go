@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
 	"github.com/mongodb/mongo-go-driver/mongo/private/msg"
 )
@@ -28,6 +29,10 @@ type MongoDBX509Authenticator struct {
 
 // Auth implements the Authenticator interface.
 func (a *MongoDBX509Authenticator) Auth(ctx context.Context, c conn.Connection) error {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	authRequestDoc := bson.NewDocument(
 		bson.EC.Int32("authenticate", 1),
 		bson.EC.String("mechanism", MongoDBX509),

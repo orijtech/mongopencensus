@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/private/options"
 )
@@ -17,6 +18,9 @@ import (
 // Update executes an update command with a given set of update documents and options.
 func Update(ctx context.Context, s *SelectedServer, ns Namespace, updateDocs []*bson.Document,
 	opt ...options.UpdateOptioner) (bson.Reader, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	if err := ns.validate(); err != nil {
 		return nil, err

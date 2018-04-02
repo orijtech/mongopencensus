@@ -11,6 +11,7 @@ import (
 	"errors"
 
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal"
 	"github.com/mongodb/mongo-go-driver/mongo/private/options"
 )
@@ -18,6 +19,9 @@ import (
 // FindOneAndUpdate modifies and returns a single document.
 func FindOneAndUpdate(ctx context.Context, s *SelectedServer, ns Namespace, query *bson.Document,
 	update *bson.Document, opts ...options.FindOneAndUpdateOptioner) (Cursor, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	if err := ns.validate(); err != nil {
 		return nil, err

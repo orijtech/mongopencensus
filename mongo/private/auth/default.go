@@ -9,6 +9,7 @@ package auth
 import (
 	"context"
 
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 	"github.com/mongodb/mongo-go-driver/mongo/internal/feature"
 	"github.com/mongodb/mongo-go-driver/mongo/private/conn"
 )
@@ -27,6 +28,9 @@ type DefaultAuthenticator struct {
 
 // Auth authenticates the connection.
 func (a *DefaultAuthenticator) Auth(ctx context.Context, c conn.Connection) error {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	var actual Authenticator
 	var err error
 	if err = feature.ScramSHA1(c.Model().Version); err != nil {
