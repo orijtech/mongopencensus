@@ -18,6 +18,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/readpref"
 	"github.com/mongodb/mongo-go-driver/core/topology"
 	"github.com/mongodb/mongo-go-driver/core/writeconcern"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 const defaultLocalThreshold = 15 * time.Millisecond
@@ -147,6 +148,9 @@ func (client *Client) ConnectionString() string {
 func (client *Client) listDatabasesHelper(ctx context.Context, filter interface{},
 	nameOnly bool) (ListDatabasesResult, error) {
 
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	f, err := TransformDocument(filter)
 	if err != nil {
 		return ListDatabasesResult{}, err
@@ -171,11 +175,17 @@ func (client *Client) listDatabasesHelper(ctx context.Context, filter interface{
 
 // ListDatabases returns a ListDatabasesResult.
 func (client *Client) ListDatabases(ctx context.Context, filter interface{}) (ListDatabasesResult, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	return client.listDatabasesHelper(ctx, filter, false)
 }
 
 // ListDatabaseNames returns a slice containing the names of all of the databases on the server.
 func (client *Client) ListDatabaseNames(ctx context.Context, filter interface{}) ([]string, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	res, err := client.listDatabasesHelper(ctx, filter, true)
 	if err != nil {
 		return nil, err

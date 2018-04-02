@@ -17,6 +17,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/command"
 	"github.com/mongodb/mongo-go-driver/core/description"
 	"github.com/mongodb/mongo-go-driver/core/wiremessage"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // MONGODBCR is the mechanism name for MONGODB-CR.
@@ -39,6 +40,9 @@ type MongoDBCRAuthenticator struct {
 
 // Auth authenticates the connection.
 func (a *MongoDBCRAuthenticator) Auth(ctx context.Context, desc description.Server, rw wiremessage.ReadWriter) error {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	// Arbiters cannot be authenticated
 	if desc.Kind == description.RSArbiter {

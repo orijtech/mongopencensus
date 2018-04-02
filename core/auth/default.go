@@ -12,6 +12,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/description"
 	"github.com/mongodb/mongo-go-driver/core/wiremessage"
 	"github.com/mongodb/mongo-go-driver/internal/feature"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 func newDefaultAuthenticator(cred *Cred) (Authenticator, error) {
@@ -28,6 +29,9 @@ type DefaultAuthenticator struct {
 
 // Auth authenticates the connection.
 func (a *DefaultAuthenticator) Auth(ctx context.Context, desc description.Server, rw wiremessage.ReadWriter) error {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	var actual Authenticator
 	var err error
 	if err = feature.ScramSHA1(desc.Version); err != nil {

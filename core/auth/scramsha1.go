@@ -11,18 +11,18 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha1"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"math/rand"
 	"strconv"
+	"strings"
+
+	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/mongodb/mongo-go-driver/core/description"
 	"github.com/mongodb/mongo-go-driver/core/wiremessage"
-	"golang.org/x/crypto/pbkdf2"
-
-	"strings"
-
-	"encoding/base64"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // SCRAMSHA1 is the mechanism name for SCRAM-SHA-1.
@@ -51,6 +51,9 @@ type ScramSHA1Authenticator struct {
 
 // Auth authenticates the connection.
 func (a *ScramSHA1Authenticator) Auth(ctx context.Context, desc description.Server, rw wiremessage.ReadWriter) error {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	client := &scramSaslClient{
 		username:       a.Username,
 		password:       a.Password,

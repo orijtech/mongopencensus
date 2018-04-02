@@ -13,6 +13,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/command"
 	"github.com/mongodb/mongo-go-driver/core/description"
 	"github.com/mongodb/mongo-go-driver/core/wiremessage"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // SaslClient is the client piece of a sasl conversation.
@@ -30,6 +31,9 @@ type SaslClientCloser interface {
 
 // ConductSaslConversation handles running a sasl conversation with MongoDB.
 func ConductSaslConversation(ctx context.Context, desc description.Server, rw wiremessage.ReadWriter, db string, client SaslClient) error {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	// Arbiters cannot be authenticated
 	if desc.Kind == description.RSArbiter {

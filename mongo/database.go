@@ -16,6 +16,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/readpref"
 	"github.com/mongodb/mongo-go-driver/core/topology"
 	"github.com/mongodb/mongo-go-driver/core/writeconcern"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // Database performs operations on a given database.
@@ -70,6 +71,9 @@ func (db *Database) RunCommand(ctx context.Context, runCommand interface{}) (bso
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	cmd := command.Command{DB: db.Name(), Command: runCommand}
 	return dispatch.Command(ctx, cmd, db.client.topology, topology.ReadPrefSelector(readpref.Primary()))

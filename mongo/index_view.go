@@ -9,6 +9,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/core/command"
 	"github.com/mongodb/mongo-go-driver/core/dispatch"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // ErrInvalidIndexValue indicates that the index Keys document has a value that isn't either a number or a string.
@@ -33,6 +34,9 @@ type IndexModel struct {
 
 // List returns a cursor iterating over all the indexes in the collection.
 func (iv IndexView) List(ctx context.Context) (Cursor, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	listCmd := command.ListIndexes{NS: iv.coll.namespace()}
 
 	return dispatch.ListIndexes(ctx, listCmd, iv.coll.client.topology, iv.coll.writeSelector)
@@ -40,6 +44,9 @@ func (iv IndexView) List(ctx context.Context) (Cursor, error) {
 
 // CreateOne creates a single index in the collection specified by the model.
 func (iv IndexView) CreateOne(ctx context.Context, model IndexModel) (string, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	names, err := iv.CreateMany(ctx, model)
 	if err != nil {
 		return "", err
@@ -51,6 +58,9 @@ func (iv IndexView) CreateOne(ctx context.Context, model IndexModel) (string, er
 // CreateMany creates multiple indexes in the collection specified by the models. The names of the
 // creates indexes are returned.
 func (iv IndexView) CreateMany(ctx context.Context, models ...IndexModel) ([]string, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	names := make([]string, 0, len(models))
 	indexes := bson.NewArray()
 
@@ -88,6 +98,9 @@ func (iv IndexView) CreateMany(ctx context.Context, models ...IndexModel) ([]str
 
 // DropOne drops the index with the given name from the collection.
 func (iv IndexView) DropOne(ctx context.Context, name string) (bson.Reader, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	if name == "*" {
 		return nil, ErrMultipleIndexDrop
 	}
@@ -99,6 +112,9 @@ func (iv IndexView) DropOne(ctx context.Context, name string) (bson.Reader, erro
 
 // DropAll drops all indexes in the collection.
 func (iv IndexView) DropAll(ctx context.Context) (bson.Reader, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	cmd := command.DropIndexes{NS: iv.coll.namespace(), Index: "*"}
 
 	return dispatch.DropIndexes(ctx, cmd, iv.coll.client.topology, iv.coll.writeSelector)

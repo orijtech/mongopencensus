@@ -12,6 +12,7 @@ import (
 
 	"github.com/mongodb/mongo-go-driver/core/description"
 	"github.com/mongodb/mongo-go-driver/core/wiremessage"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // PLAIN is the mechanism name for PLAIN.
@@ -36,6 +37,9 @@ type PlainAuthenticator struct {
 
 // Auth authenticates the connection.
 func (a *PlainAuthenticator) Auth(ctx context.Context, desc description.Server, rw wiremessage.ReadWriter) error {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	return ConductSaslConversation(ctx, desc, rw, "$external", &plainSaslClient{
 		username: a.Username,
 		password: a.Password,
