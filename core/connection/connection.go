@@ -21,6 +21,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/addr"
 	"github.com/mongodb/mongo-go-driver/core/description"
 	"github.com/mongodb/mongo-go-driver/core/wiremessage"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 var globalClientConnectionID uint64
@@ -63,6 +64,9 @@ type HandshakerFunc func(context.Context, addr.Addr, wiremessage.ReadWriter) (de
 
 // Handshake implements the Handshaker interface.
 func (hf HandshakerFunc) Handshake(ctx context.Context, address addr.Addr, rw wiremessage.ReadWriter) (description.Server, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	return hf(ctx, address, rw)
 }
 

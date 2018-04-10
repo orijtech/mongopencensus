@@ -14,6 +14,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/core/command"
 	"github.com/mongodb/mongo-go-driver/core/options"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // ErrMissingResumeToken indicates that a change stream notification from the server did not
@@ -35,6 +36,11 @@ const errorCodeCursorNotFound int32 = 43
 func newChangeStream(ctx context.Context, coll *Collection, pipeline interface{},
 	opts ...options.ChangeStreamOptioner) (*changeStream, error) {
 
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
+	trace.AnnotateStrings(span, "New changes stream", nil)
+
 	pipelineArr, err := transformAggregatePipeline(pipeline)
 	if err != nil {
 		return nil, err
@@ -51,6 +57,7 @@ func newChangeStream(ctx context.Context, coll *Collection, pipeline interface{}
 			bson.NewDocument(
 				bson.EC.SubDocument("$changeStream", changeStreamOptions))))
 
+	trace.AnnotateStrings(span, "Aggregation the collection", nil)
 	cursor, err := coll.Aggregate(ctx, pipelineArr)
 	if err != nil {
 		return nil, err
@@ -71,6 +78,11 @@ func (cs *changeStream) ID() int64 {
 }
 
 func (cs *changeStream) Next(ctx context.Context) bool {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
+	trace.AnnotateStrings(span, "Next", nil)
+
 	if cs.cursor.Next(ctx) {
 		return true
 	}
@@ -108,12 +120,14 @@ func (cs *changeStream) Next(ctx context.Context) bool {
 		IDs: []int64{cs.ID()},
 	}
 
+	trace.AnnotateStrings(span, "Selecting the server in the topology", nil)
 	ss, err := cs.coll.client.topology.SelectServer(ctx, cs.coll.readSelector)
 	if err != nil {
 		cs.err = err
 		return false
 	}
 
+	trace.AnnotateStrings(span, "Now retrieving the connection", nil)
 	conn, err := ss.Connection(ctx)
 	if err != nil {
 		cs.err = err
@@ -140,6 +154,7 @@ func (cs *changeStream) Next(ctx context.Context) bool {
 		NS:       command.Namespace{DB: oldns.DB, Collection: oldns.Collection},
 		Pipeline: cs.pipeline,
 	}
+	trace.AnnotateStrings(span, "Now invoking aggregate command RoundTrip", nil)
 	cs.cursor, cs.err = aggCmd.RoundTrip(ctx, ss.Description(), ss, conn)
 
 	if cs.err != nil {

@@ -6,6 +6,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/command"
 	"github.com/mongodb/mongo-go-driver/core/result"
 	"github.com/mongodb/mongo-go-driver/core/topology"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // CreateIndexes handles the full cycle dispatch and execution of a createIndexes
@@ -16,6 +17,9 @@ func CreateIndexes(
 	topo *topology.Topology,
 	selector topology.ServerSelector,
 ) (result.CreateIndexes, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	ss, err := topo.SelectServer(ctx, selector)
 	if err != nil {

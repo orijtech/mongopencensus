@@ -61,6 +61,14 @@ func RelativeName() string {
 	return relativeName(2)
 }
 
+func AnnotateStrings(span *trace.Span, message string, strMap map[string]string) {
+	var attrs []trace.Attribute
+	for key, value := range strMap {
+		attrs = append(attrs, trace.StringAttribute(key, value))
+	}
+	span.Annotate(attrs, message)
+}
+
 func relativeName(nCaller int) string {
 	pc, _, _, _ := runtime.Caller(nCaller)
 	fn := runtime.FuncForPC(pc)

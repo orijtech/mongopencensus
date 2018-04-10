@@ -8,6 +8,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/options"
 	"github.com/mongodb/mongo-go-driver/core/result"
 	"github.com/mongodb/mongo-go-driver/core/wiremessage"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // FindOneAndDelete represents the findOneAndDelete operation.
@@ -70,18 +71,28 @@ func (f *FindOneAndDelete) Err() error { return f.err }
 
 // RoundTrip handles the execution of this command using the provided wiremessage.ReadWriter.
 func (f *FindOneAndDelete) RoundTrip(ctx context.Context, desc description.SelectedServer, rw wiremessage.ReadWriter) (result.FindAndModify, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	wm, err := f.Encode(desc)
 	if err != nil {
 		return result.FindAndModify{}, err
 	}
 
+	_, wwSpan := trace.SpanWithName(ctx, "WriteWireMessage")
 	err = rw.WriteWireMessage(ctx, wm)
+	wwSpan.End()
 	if err != nil {
 		return result.FindAndModify{}, err
 	}
+	_, rwSpan := trace.SpanWithName(ctx, "ReadWireMessage")
 	wm, err = rw.ReadWireMessage(ctx)
+	rwSpan.End()
 	if err != nil {
 		return result.FindAndModify{}, err
 	}
+	_, dcSpan := trace.SpanWithName(ctx, "Decode")
+	defer dcSpan.End()
+
 	return f.Decode(desc, wm).Result()
 }

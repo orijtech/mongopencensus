@@ -7,6 +7,7 @@ import (
 
 	"github.com/mongodb/mongo-go-driver/core/connection"
 	"github.com/mongodb/mongo-go-driver/core/wiremessage"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // sconn is a wrapper around a connection.Connection. This type is returned by
@@ -18,6 +19,9 @@ type sconn struct {
 }
 
 func (sc *sconn) ReadWireMessage(ctx context.Context) (wiremessage.WireMessage, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	if sc.Connection == nil {
 		return nil, errors.New("already closed")
 	}
@@ -27,6 +31,9 @@ func (sc *sconn) ReadWireMessage(ctx context.Context) (wiremessage.WireMessage, 
 }
 
 func (sc *sconn) WriteWireMessage(ctx context.Context, wm wiremessage.WireMessage) error {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	if sc.Connection == nil {
 		return errors.New("already closed")
 	}

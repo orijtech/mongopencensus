@@ -6,6 +6,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/command"
 	"github.com/mongodb/mongo-go-driver/core/readconcern"
 	"github.com/mongodb/mongo-go-driver/core/topology"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // Count handles the full cycle dispatch and execution of a count command against the provided
@@ -17,6 +18,9 @@ func Count(
 	selector topology.ServerSelector,
 	rc *readconcern.ReadConcern,
 ) (int64, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	ss, err := topo.SelectServer(ctx, selector)
 	if err != nil {

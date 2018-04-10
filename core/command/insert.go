@@ -8,6 +8,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/options"
 	"github.com/mongodb/mongo-go-driver/core/result"
 	"github.com/mongodb/mongo-go-driver/core/wiremessage"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // Insert represents the insert command.
@@ -70,6 +71,9 @@ func (i *Insert) Err() error { return i.err }
 
 // RoundTrip handles the execution of this command using the provided wiremessage.ReadWriter.
 func (i *Insert) RoundTrip(ctx context.Context, desc description.SelectedServer, rw wiremessage.ReadWriter) (result.Insert, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	wm, err := i.Encode(desc)
 	if err != nil {
 		return result.Insert{}, err

@@ -6,9 +6,11 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"golang.org/x/sync/semaphore"
+
 	"github.com/mongodb/mongo-go-driver/core/addr"
 	"github.com/mongodb/mongo-go-driver/core/description"
-	"golang.org/x/sync/semaphore"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // ErrPoolClosed is returned from an attempt to use a closed pool.
@@ -81,6 +83,9 @@ func (p *pool) Close() error {
 }
 
 func (p *pool) Get(ctx context.Context) (Connection, *description.Server, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	p.Lock()
 	conns := p.conns
 	p.Unlock()

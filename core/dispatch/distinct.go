@@ -7,6 +7,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/readconcern"
 	"github.com/mongodb/mongo-go-driver/core/result"
 	"github.com/mongodb/mongo-go-driver/core/topology"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // Distinct handles the full cycle dispatch and execution of a distinct command against the provided
@@ -18,6 +19,9 @@ func Distinct(
 	selector topology.ServerSelector,
 	rc *readconcern.ReadConcern,
 ) (result.Distinct, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	ss, err := topo.SelectServer(ctx, selector)
 	if err != nil {

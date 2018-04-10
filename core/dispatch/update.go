@@ -8,6 +8,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/result"
 	"github.com/mongodb/mongo-go-driver/core/topology"
 	"github.com/mongodb/mongo-go-driver/core/writeconcern"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // Update handles the full cycle dispatch and execution of an update command against the provided
@@ -19,6 +20,9 @@ func Update(
 	selector topology.ServerSelector,
 	wc *writeconcern.WriteConcern,
 ) (result.Update, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	ss, err := topo.SelectServer(ctx, selector)
 	if err != nil {

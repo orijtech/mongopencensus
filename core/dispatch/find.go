@@ -6,6 +6,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/command"
 	"github.com/mongodb/mongo-go-driver/core/readconcern"
 	"github.com/mongodb/mongo-go-driver/core/topology"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // Find handles the full cycle dispatch and execution of a find command against the provided
@@ -18,13 +19,18 @@ func Find(
 	rc *readconcern.ReadConcern,
 ) (command.Cursor, error) {
 
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	ss, err := topo.SelectServer(ctx, selector)
 	if err != nil {
 		return nil, err
 	}
 
 	if rc != nil {
+		_, rSpan := trace.SpanWithName(ctx, "readConcernOption")
 		opt, err := readConcernOption(rc)
+		rSpan.End()
 		if err != nil {
 			return nil, err
 		}
@@ -32,7 +38,10 @@ func Find(
 	}
 
 	desc := ss.Description()
+	_, cSpan := trace.SpanWithName(ctx, "ss.Connection")
 	conn, err := ss.Connection(ctx)
+	cSpan.End()
+
 	if err != nil {
 		return nil, err
 	}

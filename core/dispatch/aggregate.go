@@ -7,6 +7,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/options"
 	"github.com/mongodb/mongo-go-driver/core/topology"
 	"github.com/mongodb/mongo-go-driver/core/writeconcern"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // Aggregate handles the full cycle dispatch and execution of an aggregate command against the provided
@@ -18,6 +19,9 @@ func Aggregate(
 	readSelector, writeSelector topology.ServerSelector,
 	wc *writeconcern.WriteConcern,
 ) (command.Cursor, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	dollarOut := cmd.HasDollarOut()
 

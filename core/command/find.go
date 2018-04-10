@@ -8,6 +8,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/options"
 	"github.com/mongodb/mongo-go-driver/core/readpref"
 	"github.com/mongodb/mongo-go-driver/core/wiremessage"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // Find represents the find command.
@@ -98,6 +99,9 @@ func (f *Find) Err() error { return f.err }
 // RoundTrip handles the execution of this command using the provided wiremessage.ReadWriter.
 func (f *Find) RoundTrip(ctx context.Context, desc description.SelectedServer, cb CursorBuilder, rw wiremessage.ReadWriter) (Cursor, error) {
 	wm, err := f.Encode(desc)
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	if err != nil {
 		return nil, err
 	}
@@ -110,5 +114,7 @@ func (f *Find) RoundTrip(ctx context.Context, desc description.SelectedServer, c
 	if err != nil {
 		return nil, err
 	}
+	_, dSpan := trace.SpanWithName(ctx, "Decode")
+	defer dSpan.End()
 	return f.Decode(desc, cb, wm).Result()
 }

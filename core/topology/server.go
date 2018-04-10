@@ -14,6 +14,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/core/description"
 	"github.com/mongodb/mongo-go-driver/core/options"
 	"github.com/mongodb/mongo-go-driver/core/result"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 const minHeartbeatInterval = 500 * time.Millisecond
@@ -108,7 +109,12 @@ func (s *Server) Close() error {
 
 // Connection gets a connection to the server.
 func (s *Server) Connection(ctx context.Context) (connection.Connection, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
+	_, connSpan := trace.SpanWithName(ctx, "s.pool.Get")
 	conn, desc, err := s.pool.Get(ctx)
+	connSpan.End()
 	if err != nil {
 		return nil, err
 	}

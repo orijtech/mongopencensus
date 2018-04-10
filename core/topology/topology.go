@@ -13,6 +13,7 @@ import (
 
 	"github.com/mongodb/mongo-go-driver/core/addr"
 	"github.com/mongodb/mongo-go-driver/core/description"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // ErrSubscribeAfterClosed is returned when a user attempts to subscribe to a
@@ -186,6 +187,9 @@ func (t *Topology) RequestImmediateCheck() {
 // server selection spec, and will time out after severSelectionTimeout or when the
 // parent context is done.
 func (t *Topology) SelectServer(ctx context.Context, ss ServerSelector) (*SelectedServer, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	var ssTimeoutCh <-chan time.Time
 
 	if t.cfg.serverSelectionTimeout > 0 {
@@ -242,6 +246,9 @@ func (t *Topology) findServer(selected description.Server) (*SelectedServer, err
 // selectServer is the core piece of server selection. It handles getting
 // topology descriptions and running sever selection on those descriptions.
 func (t *Topology) selectServer(ctx context.Context, subscriptionCh <-chan description.Topology, ss ServerSelector, timeoutCh <-chan time.Time) ([]description.Server, error) {
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
+
 	var current description.Topology
 	for {
 		select {

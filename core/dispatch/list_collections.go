@@ -5,6 +5,7 @@ import (
 
 	"github.com/mongodb/mongo-go-driver/core/command"
 	"github.com/mongodb/mongo-go-driver/core/topology"
+	"github.com/mongodb/mongo-go-driver/internal/trace"
 )
 
 // ListCollections handles the full cycle dispatch and execution of a listCollections command against the provided
@@ -15,6 +16,9 @@ func ListCollections(
 	topo *topology.Topology,
 	selector topology.ServerSelector,
 ) (command.Cursor, error) {
+
+	ctx, span := trace.SpanFromFunctionCaller(ctx)
+	defer span.End()
 
 	ss, err := topo.SelectServer(ctx, selector)
 	if err != nil {

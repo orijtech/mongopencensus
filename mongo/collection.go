@@ -78,11 +78,13 @@ func (coll *Collection) InsertOne(ctx context.Context, document interface{},
 	ctx, span := trace.SpanFromFunctionCaller(ctx)
 	defer span.End()
 
+	trace.AnnotateStrings(span, "TransformDocument", nil)
 	doc, err := TransformDocument(document)
 	if err != nil {
 		return nil, err
 	}
 
+	trace.AnnotateStrings(span, "EnsureID", nil)
 	insertedID, err := ensureID(doc)
 	if err != nil {
 		return nil, err
@@ -565,19 +567,19 @@ func (coll *Collection) Find(ctx context.Context, filter interface{},
 func (coll *Collection) FindOne(ctx context.Context, filter interface{},
 	opts ...options.FindOneOptioner) *DocumentResult {
 
-	findOpts := make([]options.FindOptioner, 0, len(opts))
-	for _, opt := range opts {
-		findOpts = append(findOpts, opt.(options.FindOptioner))
-	}
-
-	findOpts = append(findOpts, Opt.Limit(1))
-
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
 	ctx, span := trace.SpanFromFunctionCaller(ctx)
 	defer span.End()
+
+	findOpts := make([]options.FindOptioner, 0, len(opts))
+	for _, opt := range opts {
+		findOpts = append(findOpts, opt.(options.FindOptioner))
+	}
+
+	findOpts = append(findOpts, Opt.Limit(1))
 
 	var f *bson.Document
 	var err error
